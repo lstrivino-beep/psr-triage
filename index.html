@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PSR Triage Digital · Solicitud de revisión</title>
+<style>
+:root{--azul:#1f4e79;--fondo:#f4f5f7;--tx:#1b2a3a;--rojo:#b3261e;--amar:#a86a00;--verde:#2e7d32}
+*{box-sizing:border-box}
+body{margin:0;font:18px/1.45 system-ui,"Segoe UI",Roboto,Arial,sans-serif;background:var(--fondo);color:var(--tx)}
+header{background:var(--azul);color:#fff;padding:14px 16px}
+header h1{margin:0;font-size:1.25rem}header p{margin:2px 0 0;font-size:.9rem;opacity:.9}
+main{max-width:560px;margin:0 auto;padding:14px}
+.prog{height:12px;background:#d5dbe3;border-radius:6px;overflow:hidden}
+#bar{height:100%;width:25%;background:var(--azul);transition:width .2s}
+#paso{margin:6px 0 0;font-weight:700}
+h2{font-size:1.2rem;margin:10px 0 4px}
+label,legend{display:block;font-weight:600;margin:14px 0 4px}
+small,.ayuda{color:#51606f;font-size:.88rem;font-weight:400}
+input[type=text],input[type=tel],input[type=number],textarea,select{width:100%;font:inherit;padding:12px;border:2px solid #8a97a8;border-radius:10px;background:#fff}
+textarea{min-height:96px}
+button{font:inherit;min-height:52px;padding:10px 16px;border-radius:12px;border:2px solid var(--azul);background:var(--azul);color:#fff;cursor:pointer}
+button.sec{background:#fff;color:var(--azul)}
+button:disabled{opacity:.5}
+.op{display:flex;gap:10px;align-items:center;padding:12px;margin:8px 0;background:#fff;border:2px solid #c3ccd8;border-radius:10px;font-weight:400}
+.op input{width:24px;height:24px;flex:none}
+fieldset{border:0;padding:0;margin:0}
+.nav{display:flex;gap:10px;margin:18px 0}.nav button{flex:1}
+#err,#av{color:var(--rojo);font-weight:700;min-height:1.4em}
+.zbs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.zbs button{background:#fff;color:var(--azul)}
+.zbs button.sel{background:var(--azul);color:#fff}
+svg{width:100%;max-height:52vh;background:#fff;border:2px solid #c3ccd8;border-radius:12px}
+.z{cursor:pointer;outline:none}
+.z rect{fill:#dbe4ee;stroke:#44546a;stroke-width:2}
+.z text{font-size:12px;text-anchor:middle;fill:#1b2a3a;pointer-events:none}
+.z.sel rect{fill:var(--azul)}.z.sel text{fill:#fff}
+.z:focus rect{stroke:#000;stroke-width:4}
+.res{background:#fff;border:2px solid #c3ccd8;border-radius:10px;padding:10px 12px;margin:8px 0}
+.res button{min-height:40px;padding:4px 10px;font-size:.9rem;float:right}
+.sem{padding:16px;border-radius:14px;color:#fff;font-weight:700;text-align:center;font-size:1.3rem}
+.sem.rojo{background:var(--rojo)}.sem.amarillo{background:var(--amar)}.sem.verde{background:var(--verde)}
+pre{white-space:pre-wrap;word-break:break-word;background:#fff;border:2px solid #c3ccd8;border-radius:10px;padding:12px;font:15px/1.4 ui-monospace,Menlo,Consolas,monospace}
+.acc{display:grid;gap:8px}
+.aviso{background:#fff7e0;border:2px solid #e2c36b;border-radius:10px;padding:10px 12px;font-size:.95rem}
+#tp{background:#fff;border:2px dashed var(--azul);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:.95rem}
+#tp .f{display:flex;gap:8px;align-items:center;margin:6px 0}
+#tp input,#tp select{padding:8px}
+#tcr{font:700 1.3rem ui-monospace,monospace}
+footer{max-width:560px;margin:0 auto;padding:0 14px 24px;font-size:.85rem;color:#51606f}
+</style>
+</head>
+<body>
+<header><h1>PSR Pasión Sobre Ruedas</h1><p>Solicitud de revisión · prototipo de baja fidelidad</p></header>
+<main>
+<aside id="tp" hidden>
+  <b>Modo de prueba</b>
+  <div class="f"><select id="tcaso" aria-label="Caso"></select><input id="tcli" type="number" min="1" max="9" placeholder="Cliente" aria-label="Cliente"></div>
+  <p id="tdesc"></p>
+  <div class="f"><button id="tini">▶ Iniciar tarea</button><span id="tcr">00:00</span></div>
+  <p>Errores: <b id="terr">0</b> · Retrocesos: <b id="tret">0</b></p>
+  <div id="tpost" hidden>
+    <div class="f"><button id="tlec" class="sec">⏱ Medir lectura de la ficha</button><span id="tlecv"></span></div>
+    <div class="f"><select id="tuso" aria-label="Intención de uso"><option value="">Intención de uso (1-5)</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select><input id="tcom" type="text" placeholder="Comentario" aria-label="Comentario"></div>
+  </div>
+  <button id="tcop" class="sec">Copiar resumen de resultados</button> <span id="tn"></span>
+</aside>
+
+<div class="prog"><div id="bar"></div></div>
+<p id="paso"></p>
+
+<section id="s1">
+  <h2>Sus datos y los del vehículo</h2>
+  <label for="nombre">Nombre</label><input id="nombre" type="text" autocomplete="name" placeholder="Ej.: Andrés Ramírez (ficticio)">
+  <label for="cel">Celular</label><input id="cel" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ej.: 3001234567">
+  <label for="placa">Placa</label><input id="placa" type="text" maxlength="7" autocapitalize="characters" placeholder="Ej.: ABC123" style="text-transform:uppercase">
+  <label for="veh">Marca, modelo y año</label><input id="veh" type="text" placeholder="Ej.: Mazda 3, 2018">
+  <label for="km">Kilometraje aproximado <small>(opcional)</small></label><input id="km" type="number" inputmode="numeric" min="0" placeholder="Ej.: 45000">
+  <p class="ayuda">No le pedimos cédula ni correo.</p>
+</section>
+
+<section id="s2" hidden>
+  <h2>¿Dónde cree que está el problema?</h2>
+  <p class="ayuda">Toque la zona del vehículo (frente arriba). Si no sabe, use «No sé».</p>
+  <svg id="mapa" viewBox="0 0 260 400" role="group" aria-label="Mapa del vehículo visto desde arriba, con el frente hacia arriba">
+    <text x="130" y="11" font-size="11" text-anchor="middle" fill="#51606f">▲ Frente</text>
+    <rect x="45" y="15" width="170" height="370" rx="55" fill="#fff" stroke="#44546a" stroke-width="3"/>
+    <g class="z" data-z="direccion" tabindex="0" role="button" aria-label="Dirección y suspensión"><rect x="58" y="46" width="144" height="26" rx="8"/><text x="130" y="63">Dirección y suspensión</text></g>
+    <g class="z" data-z="motor" tabindex="0" role="button" aria-label="Motor y capó"><rect x="62" y="78" width="136" height="62" rx="22"/><text x="130" y="114">Motor y capó</text></g>
+    <g class="z" data-z="electrico" tabindex="0" role="button" aria-label="Sistema eléctrico y tablero"><rect x="62" y="146" width="136" height="34" rx="8"/><text x="130" y="167">Eléctrico y tablero</text></g>
+    <g class="z" data-z="interior" tabindex="0" role="button" aria-label="Interior y otros"><rect x="84" y="186" width="92" height="84" rx="8"/><rect x="62" y="276" width="136" height="64" rx="18"/><text x="130" y="232">Interior</text><text x="130" y="312">Baúl y otros</text></g>
+    <g class="z" data-z="carroceria" tabindex="0" role="button" aria-label="Carrocería y pintura"><rect x="50" y="186" width="30" height="84" rx="8"/><rect x="180" y="186" width="30" height="84" rx="8"/><text transform="translate(69 228) rotate(-90)">Carrocería</text><text transform="translate(199 228) rotate(90)">Carrocería</text></g>
+    <g class="z" data-z="frenos" tabindex="0" role="button" aria-label="Frenos y ruedas"><rect x="19" y="44" width="24" height="56" rx="6"/><rect x="217" y="44" width="24" height="56" rx="6"/><rect x="19" y="292" width="24" height="56" rx="6"/><rect x="217" y="292" width="24" height="56" rx="6"/></g>
+  </svg>
+  <div class="zbs" id="zbs"></div>
+</section>
+
+<section id="s3" hidden>
+  <h2>Cuéntenos qué ocurre</h2>
+  <p class="ayuda" id="zsel"></p>
+  <fieldset><legend>Marque lo que aplique</legend><div id="sint"></div></fieldset>
+  <label for="desc">Descripción adicional <small>(opcional)</small></label><textarea id="desc" placeholder="Con sus palabras, ¿qué pasa y cuándo?"></textarea>
+  <fieldset><legend>¿Puede movilizarse por sus propios medios?</legend>
+    <label class="op"><input type="radio" name="mov" value="si"> Sí</label>
+    <label class="op"><input type="radio" name="mov" value="no"> No</label>
+    <label class="op"><input type="radio" name="mov" value="nose"> No estoy seguro</label>
+  </fieldset>
+  <label for="cuando">¿Desde cuándo ocurre? <small>(opcional)</small></label>
+  <select id="cuando"><option value="">Seleccione…</option><option>Hoy</option><option>Esta semana</option><option>Más de una semana</option><option>Siempre</option></select>
+  <label for="link">Enlace a una foto o video <small>(opcional)</small></label><input id="link" type="text" inputmode="url" placeholder="https://…">
+</section>
+
+<section id="s4" hidden>
+  <h2>Revise y finalice</h2>
+  <fieldset><legend>Franja preferida</legend>
+    <label class="op"><input type="radio" name="fr" value="Mañana"> Mañana</label>
+    <label class="op"><input type="radio" name="fr" value="Tarde"> Tarde</label>
+    <label class="op"><input type="radio" name="fr" value="Sin preferencia" checked> Sin preferencia</label>
+  </fieldset>
+  <h2>Resumen</h2><div id="resumen"></div>
+  <label class="op"><input type="checkbox" id="auto"> <span>Autorizo a PSR Pasión Sobre Ruedas a usar mis datos solo para atender esta solicitud, según la Ley 1581 de 2012.</span></label>
+  <p class="aviso">Su solicitud queda pendiente. No es una cita: el propietario debe revisar primero la disponibilidad real del taller.</p>
+</section>
+
+<p id="err" role="alert"></p>
+<nav class="nav" id="nav"><button id="atras" class="sec">Atrás</button><button id="sig">Siguiente</button></nav>
+
+<section id="res" hidden>
+  <div id="sem" class="sem"></div>
+  <p id="msg"></p>
+  <p class="aviso"><b>Importante:</b> esta página no envía nada por sí sola. Para que el taller reciba su solicitud, use uno de los botones de abajo. No incluye precios ni tiempos de reparación.</p>
+  <h2>Ficha para el propietario</h2>
+  <pre id="ficha"></pre>
+  <div id="selbox"><label for="selc">Ajuste del propietario: color de esta ficha</label>
+    <select id="selc"><option value="rojo">Rojo · prioritaria</option><option value="amarillo">Amarillo · revisión en taller</option><option value="verde">Verde · consulta o mantenimiento</option></select></div>
+  <div class="acc" style="margin-top:12px">
+    <button id="bcop">Copiar ficha</button>
+    <button id="bmail" class="sec">Enviar por correo</button>
+    <button id="bwa" class="sec">Abrir WhatsApp con la ficha</button>
+    <button id="bnew" class="sec">Nueva solicitud</button>
+  </div>
+  <p id="av" role="status"></p>
+</section>
+</main>
+<footer>Prototipo de baja fidelidad. En las pruebas use datos ficticios. El semáforo es una ayuda para priorizar la lectura del propietario; no es un resultado técnico.</footer>
+
+<script id="logica">
+/* ============ CONFIG: el propietario puede editar este bloque ============ */
+const CONFIG = {
+  TALLER: "PSR Pasión Sobre Ruedas",
+  WHATSAPP: "[COMPLETAR]",   // Solo dígitos con indicativo, ej.: 573001234567
+  CORREO: "[COMPLETAR]",     // Ej.: taller@ejemplo.com
+  PREFIJO: "PSR",
+  MOSTRAR_SELECTOR: true,    // false oculta el selector de color de la ficha
+  REGLAS: {
+    // Palabras buscadas en la descripción (sin distinguir mayúsculas ni tildes)
+    rojo: ["pedal blando", "blando", "se hunde", "no frena", "sin frenos", "direccion", "humo", "recalient", "sobrecalent", "temperatura alta"],
+    amarillo: ["ruido", "chilla", "chirria", "suena", "vibra", "golpeteo", "luz", "luces", "tablero", "testigo", "intermitente", "a veces", "falla", "se apaga", "no enciende"],
+    zonasRojoSiNoSeguro: ["frenos", "direccion"] // «No estoy seguro» en estas zonas = rojo
+  },
+  MENSAJES: {
+    etiqueta: { rojo: "ROJO · prioritaria", amarillo: "AMARILLO · revisión en taller", verde: "VERDE · consulta o mantenimiento" },
+    rojo: "Su solicitud fue marcada como prioritaria para revisión. Si el vehículo no puede movilizarse o siente que los frenos o la dirección fallan, no lo conduzca. El propietario revisará su caso y se comunicará con usted.",
+    amarillo: "Su solicitud fue marcada para revisión en taller. El propietario le propondrá una franja sujeta a la disponibilidad real del taller.",
+    verde: "Su solicitud fue registrada como consulta o mantenimiento. El propietario le responderá con la información y una franja sujeta a disponibilidad.",
+    comun: "Esta clasificación es orientativa y no es un diagnóstico. Su solicitud queda pendiente: no es una cita confirmada hasta que el propietario revise la disponibilidad real del taller."
+  },
+  // Síntomas por zona: [texto para el cliente, nivel: "rojo" | "amarillo" | "verde"]
+  ZONAS: [
+    { id: "motor", nombre: "Motor y capó", sint: [
+      ["Sale humo del motor o del capó", "rojo"],
+      ["El motor se recalienta o el indicador de temperatura está alto", "rojo"],
+      ["Se escucha un ruido raro en el motor", "amarillo"],
+      ["El vehículo no enciende", "amarillo"],
+      ["Se apaga o pierde fuerza a ratos", "amarillo"],
+      ["Hay una fuga o gotea líquido", "amarillo"],
+      ["Quiero cambio de aceite y filtros", "verde"] ] },
+    { id: "frenos", nombre: "Frenos y ruedas", sint: [
+      ["El pedal se siente blando o se hunde", "rojo"],
+      ["Chilla al frenar", "amarillo"],
+      ["Vibra al frenar", "amarillo"],
+      ["Huele a quemado", "amarillo"],
+      ["Hay ruido o golpeteo en las ruedas", "amarillo"] ] },
+    { id: "direccion", nombre: "Dirección y suspensión", sint: [
+      ["Siento que la dirección falla o no responde", "rojo"],
+      ["El volante vibra", "amarillo"],
+      ["El carro se va hacia un lado", "amarillo"],
+      ["Golpes o ruidos al pasar huecos", "amarillo"],
+      ["Quiero alineación y balanceo", "verde"] ] },
+    { id: "electrico", nombre: "Sistema eléctrico y tablero", sint: [
+      ["Sale humo o chispas del tablero o de los cables", "rojo"],
+      ["Se encendió una luz en el tablero", "amarillo"],
+      ["Fallas intermitentes (luces, vidrios, cierre central)", "amarillo"],
+      ["La batería se descarga o no hay corriente", "amarillo"] ] },
+    { id: "carroceria", nombre: "Carrocería y pintura", sint: [
+      ["Tuve un choque reciente", "amarillo"],
+      ["Hay un rayón, golpe o abolladura", "verde"],
+      ["La pintura se descascara o hay óxido", "verde"] ] },
+    { id: "interior", nombre: "Interior y otros", sint: [
+      ["El aire acondicionado falla o no enfría", "amarillo"],
+      ["Hay ruidos en la cabina o el baúl", "amarillo"],
+      ["Un vidrio o un cierre falla", "amarillo"] ] },
+    { id: "nose", nombre: "No sé", sint: [
+      ["Siento que los frenos o la dirección fallan", "rojo"],
+      ["Sale humo", "rojo"],
+      ["El motor se recalienta", "rojo"],
+      ["Se escucha un ruido raro", "amarillo"],
+      ["Vibra", "amarillo"],
+      ["Se encendió una luz en el tablero", "amarillo"],
+      ["Falla a veces y a veces no (intermitente)", "amarillo"] ] }
+  ],
+  COMUNES: [ // se muestran en todas las zonas
+    ["Es mantenimiento preventivo o revisión de rutina", "verde"],
+    ["Quiero una cotización", "verde"],
+    ["Tengo una duda general", "verde"] ]
+};
+
+// Casos simulados de la prueba (Tabla 18 del informe). El propietario confirma o corrige «esperado».
+const CASOS = [
+  { id: "C1", t: "Quiere un mantenimiento preventivo a los 40.000 km; el vehículo se puede movilizar.", esperado: "verde", zona: null },
+  { id: "C2", t: "Quiere una cotización de pintura para un guardabarros rayado.", esperado: "verde", zona: "carroceria" },
+  { id: "C3", t: "Quiere cambiar el aceite y los filtros.", esperado: "verde", zona: "motor" },
+  { id: "C4", t: "Al frenar se escucha un chillido desde hace tres días; el vehículo se puede movilizar.", esperado: "amarillo", zona: "frenos" },
+  { id: "C5", t: "Se encendió una luz en el tablero, pero el vehículo anda normal.", esperado: "amarillo", zona: "electrico" },
+  { id: "C6", t: "El volante vibra cuando va a más de 80 km/h.", esperado: "amarillo", zona: "direccion" },
+  { id: "C7", t: "El vehículo no enciende y no se puede movilizar.", esperado: "rojo", zona: null },
+  { id: "C8", t: "Sale humo del motor y el indicador de temperatura está alto.", esperado: "rojo", zona: "motor" },
+  { id: "C9", t: "El pedal del freno se siente blando y se hunde.", esperado: "rojo", zona: "frenos" },
+  { id: "C10", t: "Fallas eléctricas intermitentes en luces y vidrios.", esperado: "amarillo", zona: "electrico" }
+];
+
+/* ============ Lógica del semáforo (sin pantalla) ============ */
+const norm = s => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+function clasificar(d) {
+  const R = CONFIG.REGLAS, txt = norm(d.desc), rojo = [], amar = [];
+  if (d.movil === "no") rojo.push("el cliente indica que el vehículo no puede movilizarse");
+  if (d.movil === "nose" && R.zonasRojoSiNoSeguro.includes(d.zona)) rojo.push("no está seguro de si puede movilizarse y la zona es frenos o dirección");
+  (d.sints || []).forEach(s => {
+    if (s.nivel === "rojo") rojo.push("síntoma marcado: «" + s.label + "»");
+    else if (s.nivel === "amarillo") amar.push("síntoma marcado: «" + s.label + "»");
+  });
+  R.rojo.forEach(w => { if (txt.includes(norm(w))) rojo.push("la descripción menciona «" + w + "»"); });
+  R.amarillo.forEach(w => { if (txt.includes(norm(w))) amar.push("la descripción menciona «" + w + "»"); });
+  if (rojo.length) return { color: "rojo", razones: rojo };
+  if (amar.length) return { color: "amarillo", razones: amar };
+  return { color: "verde", razones: ["mantenimiento, cotización o duda general"] };
+}
+</script>
+
+<script id="interfaz">
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const MOV = { si: "Sí", no: "No", nose: "No está seguro" };
+const TITULOS = ["", "Datos", "Zona", "Síntomas", "Resumen"];
+
+/* Almacenamiento con respaldo en memoria */
+const mem = {};
+const store = {
+  get(k) { try { const v = localStorage.getItem(k); return v === null ? (mem[k] ?? null) : v; } catch (e) { return mem[k] ?? null; } },
+  set(k, v) { mem[k] = v; try { localStorage.setItem(k, v); } catch (e) { /* sin almacenamiento: queda en memoria */ } }
+};
+
+let E = { zona: null, sints: [], movil: null }, paso = 1;
+const T = { on: new URLSearchParams(location.search).get("modo") === "prueba", run: false, t0: 0, id: null, err: 0, ret: 0, regs: [], rec: null, lec0: 0 };
+const zona = id => CONFIG.ZONAS.find(z => z.id === id);
+const cuenta = k => { if (T.run) { T[k]++; updT(); } };
+
+/* ---- Mapa ---- */
+function selZona(id) {
+  if (E.zona !== id) E.sints = [];
+  E.zona = id;
+  $$(".z").forEach(g => g.classList.toggle("sel", g.dataset.z === id));
+  $$("#zbs button").forEach(b => { const s = b.dataset.z === id; b.classList.toggle("sel", s); b.setAttribute("aria-pressed", s); });
+  err("");
+}
+CONFIG.ZONAS.forEach(z => {
+  const b = document.createElement("button"); b.className = "sec"; b.dataset.z = z.id;
+  b.textContent = z.id === "nose" ? "No sé" : z.nombre; b.onclick = () => selZona(z.id);
+  if (z.id === "nose") b.style.gridColumn = "1 / -1";
+  $("#zbs").appendChild(b);
+});
+$$(".z").forEach(g => {
+  g.onclick = () => selZona(g.dataset.z);
+  g.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selZona(g.dataset.z); } };
+});
+
+/* ---- Síntomas ---- */
+function renderSint() {
+  const z = zona(E.zona), lst = z.sint.concat(CONFIG.COMUNES), box = $("#sint");
+  $("#zsel").textContent = "Zona elegida: " + z.nombre;
+  box.innerHTML = "";
+  lst.forEach((s, i) => {
+    const l = document.createElement("label"), c = document.createElement("input"), sp = document.createElement("span");
+    l.className = "op"; c.type = "checkbox"; c.value = i; sp.textContent = s[0];
+    c.checked = E.sints.some(x => x.label === s[0]);
+    c.onchange = () => { E.sints = [...box.querySelectorAll("input:checked")].map(k => ({ label: lst[k.value][0], nivel: lst[k.value][1] })); };
+    l.append(c, sp); box.appendChild(l);
+  });
+}
+
+/* ---- Navegación ---- */
+function err(m) { $("#err").textContent = m || ""; }
+function ir(n) {
+  paso = n;
+  [1, 2, 3, 4].forEach(i => $("#s" + i).hidden = i !== n);
+  $("#bar").style.width = n * 25 + "%";
+  $("#paso").textContent = "Paso " + n + " de 4 · " + TITULOS[n];
+  $("#atras").style.visibility = n === 1 ? "hidden" : "visible";
+  $("#sig").textContent = n === 4 ? "Ver resultado y ficha" : "Siguiente";
+  if (n === 3) renderSint();
+  if (n === 4) renderResumen();
+  err(""); window.scrollTo(0, 0);
+}
+function leer() {
+  E.nombre = $("#nombre").value.trim(); E.cel = $("#cel").value.replace(/\D/g, "");
+  E.placa = $("#placa").value.toUpperCase().replace(/[^A-Z0-9]/g, ""); E.veh = $("#veh").value.trim(); E.km = $("#km").value.trim();
+  E.desc = $("#desc").value.trim(); E.cuando = $("#cuando").value; E.link = $("#link").value.trim();
+  const m = document.querySelector("input[name=mov]:checked"); E.movil = m ? m.value : null;
+  E.franja = document.querySelector("input[name=fr]:checked").value;
+}
+function validar(n) {
+  leer();
+  if (n === 1) {
+    if (E.nombre.length < 2) return "Escriba su nombre.";
+    let c = E.cel; if (c.length === 12 && c.startsWith("57")) c = c.slice(2);
+    if (!/^3\d{9}$/.test(c)) return "Escriba su celular de 10 dígitos, por ejemplo 3001234567.";
+    E.cel = c;
+    if (!/^[A-Z0-9]{5,7}$/.test(E.placa)) return "Escriba la placa del vehículo, por ejemplo ABC123.";
+    if (E.veh.length < 3) return "Escriba la marca, el modelo y el año.";
+    if (E.km && !(+E.km >= 0)) return "El kilometraje debe ser un número.";
+  }
+  if (n === 2 && !E.zona) return "Toque una zona del vehículo o elija «No sé».";
+  if (n === 3) {
+    if (!E.sints.length && E.desc.length < 3) return "Marque al menos un síntoma o escriba una descripción.";
+    if (!E.movil) return "Indique si el vehículo puede movilizarse.";
+    if (E.link && !/^https?:\/\//i.test(E.link)) return "El enlace debe empezar por http:// o https://";
+  }
+  if (n === 4 && !$("#auto").checked) return "Para continuar, marque la autorización de uso de datos.";
+  return "";
+}
+$("#sig").onclick = () => {
+  const e = validar(paso);
+  if (e) { err(e); cuenta("err"); return; }
+  paso < 4 ? ir(paso + 1) : finalizar();
+};
+$("#atras").onclick = () => { leer(); cuenta("ret"); ir(paso - 1); };
+
+function renderResumen() {
+  leer();
+  const f = [
+    [1, "Datos", E.nombre + " · cel. " + E.cel + " · placa " + E.placa + " · " + E.veh + (E.km ? " · " + E.km + " km" : "")],
+    [2, "Zona", zona(E.zona).nombre],
+    [3, "Síntomas", (E.sints.map(s => s.label).join("; ") || "—") + (E.desc ? " · «" + E.desc + "»" : "") + " · Se moviliza: " + MOV[E.movil] + (E.cuando ? " · Desde: " + E.cuando : "")]
+  ];
+  const box = $("#resumen"); box.innerHTML = "";
+  f.forEach(([n, t, v]) => {
+    const d = document.createElement("div"), b = document.createElement("button"), s = document.createElement("div");
+    d.className = "res"; b.className = "sec"; b.textContent = "Corregir"; s.textContent = v;
+    b.onclick = () => { cuenta("ret"); ir(n); };
+    const h = document.createElement("b"); h.textContent = t;
+    d.append(b, h, s); box.appendChild(d);
+  });
+}
+
+/* ---- Resultado y ficha ---- */
+function codigo() {
+  const d = new Date(), p = n => String(n).padStart(2, "0"), f = p(d.getFullYear() % 100) + p(d.getMonth() + 1) + p(d.getDate()), k = "psr_n_" + f;
+  const n = (parseInt(store.get(k), 10) || 0) + 1; store.set(k, String(n));
+  return CONFIG.PREFIJO + "-" + f + "-" + String(n).padStart(3, "0");
+}
+function ficha() {
+  const C = CONFIG.MENSAJES.etiqueta, aj = E.color !== E.calc ? " · AJUSTADO por el propietario (el formulario calculó: " + C[E.calc] + ")" : "";
+  return ["FICHA DE SOLICITUD · " + CONFIG.TALLER, "Código: " + E.cod, "Fecha: " + E.fecha,
+    "Semáforo: " + C[E.color] + aj, "Motivo orientativo: " + E.razones.join("; "),
+    "Zona: " + zona(E.zona).nombre, "Síntomas: " + (E.sints.map(s => s.label).join("; ") || "(ninguno marcado)"),
+    "Descripción: " + (E.desc || "—"), "¿Se moviliza?: " + MOV[E.movil], "Desde cuándo: " + (E.cuando || "—"),
+    "Cliente: " + E.nombre + " · cel. " + E.cel, "Vehículo: placa " + E.placa + " · " + E.veh + " · " + (E.km ? E.km + " km aprox." : "km no indicado"),
+    "Franja preferida: " + E.franja, "Foto o video: " + (E.link || "—"),
+    "Estado: PENDIENTE. Sin cita confirmada; el propietario debe revisar la disponibilidad real del taller.",
+    "Autorización de datos (Ley 1581 de 2012): sí, solo para atender esta solicitud.",
+    "Clasificación orientativa; no es un diagnóstico."].join("\n");
+}
+function finalizar() {
+  leer();
+  const r = clasificar({ zona: E.zona, sints: E.sints, desc: E.desc, movil: E.movil });
+  Object.assign(E, { calc: r.color, color: r.color, razones: r.razones, cod: codigo(), fecha: new Date().toLocaleString("es-CO") });
+  [1, 2, 3, 4].forEach(i => $("#s" + i).hidden = true);
+  $("#nav").hidden = true; $("#bar").style.width = "100%"; $("#paso").textContent = "Solicitud lista";
+  $("#res").hidden = false; err("");
+  $("#sem").className = "sem " + E.color; $("#sem").textContent = CONFIG.MENSAJES.etiqueta[E.color];
+  $("#msg").textContent = CONFIG.MENSAJES[E.color] + " " + CONFIG.MENSAJES.comun;
+  $("#selc").value = E.color; $("#selbox").hidden = !CONFIG.MOSTRAR_SELECTOR;
+  $("#ficha").textContent = ficha(); window.scrollTo(0, 0);
+  registrar();
+}
+$("#selc").onchange = () => { E.color = $("#selc").value; $("#ficha").textContent = ficha(); };
+const pend = v => !v || v.includes("[COMPLETAR]");
+const aviso = m => { $("#av").textContent = m; };
+async function copiar(t, ok) {
+  try { await navigator.clipboard.writeText(t); ok(); return; } catch (e) { /* alternativa */ }
+  try { const a = document.createElement("textarea"); a.value = t; document.body.appendChild(a); a.select(); const r = document.execCommand("copy"); a.remove(); r ? ok() : aviso("No se pudo copiar; seleccione el texto y cópielo a mano."); }
+  catch (e) { aviso("No se pudo copiar; seleccione el texto y cópielo a mano."); }
+}
+$("#bcop").onclick = () => copiar(ficha(), () => aviso("Ficha copiada. Péguela en WhatsApp o en un correo."));
+$("#bmail").onclick = () => {
+  if (pend(CONFIG.CORREO)) return aviso("Falta configurar el correo del taller en el bloque CONFIG.");
+  location.href = "mailto:" + CONFIG.CORREO + "?subject=" + encodeURIComponent("Solicitud de revisión " + E.cod) + "&body=" + encodeURIComponent(ficha());
+};
+$("#bwa").onclick = () => {
+  if (pend(CONFIG.WHATSAPP)) return aviso("Falta configurar el número de WhatsApp en el bloque CONFIG.");
+  window.open("https://wa.me/" + CONFIG.WHATSAPP.replace(/\D/g, "") + "?text=" + encodeURIComponent(ficha()), "_blank");
+};
+function reiniciar() {
+  E = { zona: null, sints: [], movil: null };
+  $$("input[type=text],input[type=tel],input[type=number],textarea").forEach(i => { if (!i.closest("#tp")) i.value = ""; });
+  $("#cuando").value = ""; $("#auto").checked = false;
+  $$("input[name=mov]").forEach(r => r.checked = false);
+  document.querySelector("input[name=fr][value='Sin preferencia']").checked = true;
+  $$(".z").forEach(g => g.classList.remove("sel")); $$("#zbs button").forEach(b => b.classList.remove("sel"));
+  $("#res").hidden = true; $("#nav").hidden = false; aviso(""); ir(1);
+}
+$("#bnew").onclick = () => { reiniciar(); if (T.on) { $("#tpost").hidden = true; T.rec = null; } };
+
+/* ---- Modo de prueba ---- */
+const fmt = s => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+function updT() { $("#terr").textContent = T.err; $("#tret").textContent = T.ret; }
+function registrar() {
+  if (!T.on || !T.run) return;
+  clearInterval(T.id); T.run = false;
+  const c = CASOS.find(x => x.id === $("#tcaso").value), seg = Math.round((Date.now() - T.t0) / 1000);
+  T.rec = { caso: c.id, cli: $("#tcli").value || "—", seg, err: T.err, ret: T.ret, zona: zona(E.zona).nombre,
+    zonaEsp: c.zona ? zona(c.zona).nombre : "cualquiera", zonaOk: !c.zona || c.zona === E.zona,
+    color: E.calc, esp: c.esperado, ok: E.calc === c.esperado, fv: c.esperado === "rojo" && E.calc === "verde", lec: "", uso: "", com: "" };
+  T.regs.push(T.rec); store.set("psr_pruebas", JSON.stringify(T.regs));
+  $("#tcr").textContent = fmt(seg); $("#tpost").hidden = false; $("#tuso").value = ""; $("#tcom").value = ""; $("#tlecv").textContent = "";
+  $("#tn").textContent = T.regs.length + " tareas guardadas";
+}
+function resumen() {
+  const g = T.regs, n = g.length, c = f => g.filter(f).length, lec = g.filter(r => r.lec !== ""), uso = g.filter(r => r.uso !== "");
+  const L = ["RESUMEN DE PRUEBA · PSR Triage Digital · " + new Date().toLocaleString("es-CO"),
+    "Tareas registradas: " + n, "Terminadas en menos de 3 min: " + c(r => r.seg < 180) + "/" + n,
+    "Semáforo igual al esperado: " + c(r => r.ok) + "/" + n, "Zona elegida igual a la esperada: " + c(r => r.zonaOk) + "/" + n,
+    "Falsos verdes (esperado rojo, resultó verde): " + c(r => r.fv),
+    "Fichas leídas en menos de 1 min: " + lec.filter(r => r.lec < 60).length + "/" + lec.length,
+    "Intención de uso de 4 o más: " + uso.filter(r => +r.uso >= 4).length + "/" + uso.length, "",
+    ["Caso", "Cliente", "Segundos", "Errores", "Retrocesos", "Zona elegida", "Zona esperada", "Semáforo", "Esperado", "Coincide", "Lectura ficha (s)", "Intención (1-5)", "Comentario"].join("\t")];
+  g.forEach(r => L.push([r.caso, r.cli, r.seg, r.err, r.ret, r.zona, r.zonaEsp, r.color, r.esp, r.ok ? "sí" : "no", r.lec, r.uso, r.com].join("\t")));
+  return L.join("\n");
+}
+if (T.on) {
+  $("#tp").hidden = false;
+  try { T.regs = JSON.parse(store.get("psr_pruebas") || "[]"); } catch (e) { T.regs = []; }
+  $("#tn").textContent = T.regs.length ? T.regs.length + " tareas guardadas" : "";
+  CASOS.forEach(c => { const o = document.createElement("option"); o.value = c.id; o.textContent = c.id; $("#tcaso").appendChild(o); });
+  const mostrar = () => { $("#tdesc").textContent = "Caso: " + CASOS.find(x => x.id === $("#tcaso").value).t; };
+  $("#tcaso").onchange = mostrar; mostrar();
+  $("#tini").onclick = () => {
+    reiniciar(); clearInterval(T.id); T.err = 0; T.ret = 0; T.t0 = Date.now(); T.run = true; T.rec = null; $("#tpost").hidden = true; updT();
+    T.id = setInterval(() => { $("#tcr").textContent = fmt(Math.round((Date.now() - T.t0) / 1000)); }, 250);
+  };
+  $("#tlec").onclick = () => {
+    if (!T.rec) return;
+    if (!T.lec0) { T.lec0 = Date.now(); $("#tlecv").textContent = "midiendo… toque otra vez al terminar"; }
+    else { T.rec.lec = Math.round((Date.now() - T.lec0) / 1000); T.lec0 = 0; $("#tlecv").textContent = T.rec.lec + " s"; store.set("psr_pruebas", JSON.stringify(T.regs)); }
+  };
+  $("#tuso").onchange = () => { if (T.rec) { T.rec.uso = $("#tuso").value; store.set("psr_pruebas", JSON.stringify(T.regs)); } };
+  $("#tcom").onchange = () => { if (T.rec) { T.rec.com = $("#tcom").value.replace(/[\t\n]/g, " "); store.set("psr_pruebas", JSON.stringify(T.regs)); } };
+  $("#tcop").onclick = () => copiar(resumen(), () => { $("#tn").textContent = "Resumen copiado ✔"; });
+}
+ir(1);
+</script>
+</body>
+</html>
